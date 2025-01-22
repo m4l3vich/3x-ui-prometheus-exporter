@@ -1,0 +1,4 @@
+{
+  "watch": "src",
+  "exec": "ts-node -r dotenv/config"
+}
