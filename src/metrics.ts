@@ -36,7 +36,7 @@ export async function collectMetrics () {
     upBytes.inc({ email: client.email }, upDelta)
     counterCacheUp[client.email] = client.up
 
-    const downDelta = client.up - (counterCacheDown[client.email] ?? 0)
+    const downDelta = client.down - (counterCacheDown[client.email] ?? 0)
     downBytes.inc({ email: client.email }, downDelta)
     counterCacheDown[client.email] = client.down
 
