@@ -2,6 +2,7 @@
 
 [![Typescript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/) [![Docker Hub](https://img.shields.io/badge/Docker-0db7ed?logo=docker&logoColor=white)](https://hub.docker.com/r/m4l3vich/3x-ui-prometheus-exporter) [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com) [![Docker Image Size](https://img.shields.io/docker/image-size/m4l3vich/3x-ui-prometheus-exporter)](https://hub.docker.com/r/m4l3vich/3x-ui-prometheus-exporter)
 
+[На русском](README_RU.md)
 
 This software exports traffic usage stats from 3X-UI to Prometheus, so you can monitor every client's usage of VPN traffic and online times.
 
@@ -25,6 +26,8 @@ is_online{email="somebody_else"} 0
 ```
 
 ## Running using Docker (recommended)
+
+`linux/amd64` and `linux/arm64` builds are available.
 
 ```
 docker run --name exporter -p 3000:3000 m4l3vich/3x-ui-prometheus-exporter
