@@ -14,7 +14,6 @@
   "devDependencies": {
     "@eslint/js": "^9.14.0",
     "@types/node": "^22.10.7",
-    "dotenv": "^16.4.5",
     "eslint": "^9.14.0",
     "globals": "^15.12.0",
     "nodemon": "^3.1.7",
@@ -23,6 +22,7 @@
     "typescript-eslint": "^8.13.0"
   },
   "dependencies": {
+    "dotenv": "^16.4.7",
     "fastify": "^5.2.1",
     "ofetch": "^1.4.1",
     "prom-client": "^15.1.3",
