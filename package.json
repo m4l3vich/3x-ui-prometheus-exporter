@@ -1,7 +1,7 @@
 {
   "name": "3x-ui-monitoring",
   "version": "1.0.0",
-  "description": "",
+  "description": "This software exports traffic usage stats from 3X-UI to Prometheus, so you can monitor every client's usage of VPN traffic and online times.",
   "main": "index.js",
   "scripts": {
     "build": "tsc",
