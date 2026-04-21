@@ -37,16 +37,18 @@ const globalHeaders: HeadersInit = {}
 if (process.env.XUI_BASIC_AUTH) {
   globalHeaders['Authorization'] = `Basic ${btoa(process.env.XUI_BASIC_AUTH)}`
 }
+if (process.env.XUI_WEB_DOMAIN) {
+  globalHeaders['Host'] = process.env.XUI_WEB_DOMAIN
+}
 
-async function login () {
+async function login (): Promise<void> {
   jar.removeAllCookiesSync()
 
-  return await $fetch<IXuiResponse>(loginUrl.href, {
+  const resp = await $fetch<IXuiResponse>(loginUrl.href, {
     method: 'POST',
     body: JSON.stringify({
       username: process.env.XUI_USERNAME,
-      password: process.env.XUI_PASSWORD,
-      loginSecret: process.env.XUI_LOGIN_SECRET
+      password: process.env.XUI_PASSWORD
     }),
     headers: {
       ...globalHeaders,
@@ -58,23 +60,35 @@ async function login () {
       }
     }
   })
+
+  if (!resp.success) {
+    throw new Error(`3X-UI login failed: ${resp.msg}`)
+  }
 }
 
 export async function getClientStats (): Promise<IClientData[]> {
   await login()
+
+  const cookieStr = jar.getCookieStringSync(statsUrl.href)
+  if (!cookieStr) {
+    throw new Error('No session cookie after login — check XUI_WEB_DOMAIN if webDomain is set in 3x-ui')
+  }
+
   const statsResp = await $fetch<IXuiStatsResponse>(statsUrl.href, {
-    headers: { ...globalHeaders, 'Cookie': jar.getCookieStringSync(statsUrl.href) }
+    headers: { ...globalHeaders, 'Cookie': cookieStr }
   })
 
   await login()
+
+  const onlineCookieStr = jar.getCookieStringSync(onlinesUrl.href)
   const onlinesResp = await $fetch<IXuiOnlinesResponse>(onlinesUrl.href, {
     method: 'POST',
-    headers: { ...globalHeaders, 'Cookie': jar.getCookieStringSync(onlinesUrl.href) }
+    headers: { ...globalHeaders, 'Cookie': onlineCookieStr }
   })
 
   if (!statsResp.success || !onlinesResp.success) {
     console.error('Failed to get client stats: 3X-UI inbound request failed', { statsResp, onlinesResp })
-    return process.exit(1)
+    return []
   }
 
   return statsResp.obj.flatMap(e =>
