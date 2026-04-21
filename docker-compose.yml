@@ -4,7 +4,7 @@ services:
     container_name: 3x-ui-exporter
     ports:
       - "3000:3000"
-    env:
+    environment:
       XUI_ORIGIN: ${XUI_ORIGIN:-http://127.0.0.1:2053/}
       XUI_USERNAME: ${XUI_USERNAME:-admin}
       XUI_PASSWORD: ${XUI_PASSWORD:-}
