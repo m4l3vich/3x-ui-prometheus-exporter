@@ -11,7 +11,7 @@ services:
       XUI_WEB_DOMAIN: ${XUI_WEB_DOMAIN:-}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000/health"]
       interval: 30s
       timeout: 5s
       retries: 3
