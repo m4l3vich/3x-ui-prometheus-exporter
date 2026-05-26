@@ -36,7 +36,7 @@ interface IXuiOnlinesResponse extends IXuiResponse {
 const loginUrl = new URL('./login', process.env.XUI_ORIGIN)
 const csrfUrl = new URL('./csrf-token', process.env.XUI_ORIGIN)
 const statsUrl = new URL('./panel/api/inbounds/list', process.env.XUI_ORIGIN)
-const onlinesUrl = new URL('./panel/api/inbounds/onlines', process.env.XUI_ORIGIN)
+const onlinesUrl = new URL('./panel/api/clients/onlines', process.env.XUI_ORIGIN)
 
 const globalHeaders: Record<string, string> = {}
 if (process.env.XUI_BASIC_AUTH) {
