@@ -25,18 +25,14 @@ interface IXuiStatsResponse extends IXuiResponse {
       email: string
       down: number
       up: number
+      lastOnline: number
     }[]
   }[]
-}
-
-interface IXuiOnlinesResponse extends IXuiResponse {
-  obj: string[]
 }
 
 const loginUrl = new URL('./login', process.env.XUI_ORIGIN)
 const csrfUrl = new URL('./csrf-token', process.env.XUI_ORIGIN)
 const statsUrl = new URL('./panel/api/inbounds/list', process.env.XUI_ORIGIN)
-const onlinesUrl = new URL('./panel/api/clients/onlines', process.env.XUI_ORIGIN)
 
 const globalHeaders: Record<string, string> = {}
 if (process.env.XUI_BASIC_AUTH) {
@@ -50,19 +46,19 @@ const REQUEST_TIMEOUT_MS = 15_000
 const MAX_RETRIES = 3
 const RETRY_BASE_DELAY_MS = 1_000
 
-/** Sleep helper. */
+/** 20-second grace period — matches 3x-ui's onlineGracePeriodMs. */
+const ONLINE_GRACE_MS = 20_000
+
 function sleep (ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-/** Capture any Set-Cookie headers from a response into the cookie jar. */
 function captureCookies (responseHeaders: Headers, url: string): void {
   for (const cookie of responseHeaders.getSetCookie()) {
     jar.setCookieSync(cookie, url)
   }
 }
 
-/** Build headers including the current cookie jar for the given URL. */
 function headersWithCookies (url: string, extra?: Record<string, string>): Record<string, string> {
   return {
     ...globalHeaders,
@@ -71,10 +67,6 @@ function headersWithCookies (url: string, extra?: Record<string, string>): Recor
   }
 }
 
-/**
- * Obtain a CSRF token from GET /csrf-token (public endpoint).
- * This creates an anonymous session and stores the CSRF token in it.
- */
 async function fetchCsrfToken (): Promise<string> {
   const resp = await $fetch<IXuiCsrfResponse>(csrfUrl.href, {
     method: 'GET',
@@ -92,14 +84,11 @@ async function fetchCsrfToken (): Promise<string> {
   return resp.obj as string
 }
 
-/** Login to 3x-ui: obtain CSRF token, then POST credentials with the token. */
 async function login (): Promise<{ csrfToken: string }> {
   jar.removeAllCookiesSync()
 
-  // Step 1: GET /csrf-token — creates a session and returns the CSRF token
   const csrfToken = await fetchCsrfToken()
 
-  // Step 2: POST /login with the CSRF token in the header
   const resp = await $fetch<IXuiResponse>(loginUrl.href, {
     method: 'POST',
     body: JSON.stringify({
@@ -125,10 +114,6 @@ async function login (): Promise<{ csrfToken: string }> {
   return { csrfToken }
 }
 
-/**
- * Retry a function with exponential backoff.
- * Only retries on network errors and 5xx responses — not on auth/logic errors.
- */
 async function withRetry<T> (fn: () => Promise<T>, label: string): Promise<T> {
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
@@ -149,7 +134,6 @@ async function withRetry<T> (fn: () => Promise<T>, label: string): Promise<T> {
       await sleep(delay)
     }
   }
-  // Unreachable, but satisfies TypeScript
   throw new Error(`${label}: exhausted retries`)
 }
 
@@ -161,7 +145,7 @@ export class XuiApiError extends Error {
 }
 
 export async function getClientStats (): Promise<IClientData[]> {
-  const { csrfToken } = await withRetry(login, '3X-UI login').catch(err => {
+  await withRetry(login, '3X-UI login').catch(err => {
     throw new XuiApiError('Login failed', err)
   })
 
@@ -170,7 +154,6 @@ export async function getClientStats (): Promise<IClientData[]> {
     throw new XuiApiError('No session cookie after login — check XUI_WEB_DOMAIN if webDomain is set in 3x-ui')
   }
 
-  // GET /list — no CSRF token needed (safe method)
   const statsResp = await withRetry(
     () => $fetch<IXuiStatsResponse>(statsUrl.href, {
       headers: { ...globalHeaders, 'Cookie': cookieStr },
@@ -181,35 +164,18 @@ export async function getClientStats (): Promise<IClientData[]> {
     throw new XuiApiError('Failed to fetch inbounds', err)
   })
 
-  // POST /onlines — reuse the CSRF token from the authenticated session
-  const onlineCookieStr = jar.getCookieStringSync(onlinesUrl.href)
-  const onlinesResp = await withRetry(
-    () => $fetch<IXuiOnlinesResponse>(onlinesUrl.href, {
-      method: 'POST',
-      headers: {
-        ...globalHeaders,
-        'Cookie': onlineCookieStr,
-        'X-CSRF-Token': csrfToken
-      },
-      timeout: REQUEST_TIMEOUT_MS
-    }),
-    '3X-UI inbounds/onlines'
-  ).catch(err => {
-    throw new XuiApiError('Failed to fetch onlines', err)
-  })
-
-  if (!statsResp.success || !onlinesResp.success) {
-    throw new XuiApiError(
-      `API returned failure: stats=${statsResp.success} onlines=${onlinesResp.success}`
-    )
+  if (!statsResp.success) {
+    throw new XuiApiError('API returned failure fetching inbounds')
   }
 
-  return statsResp.obj.flatMap(e =>
-    e.clientStats.map(cs => ({
+  const now = Date.now()
+
+  return statsResp.obj.flatMap(ib =>
+    ib.clientStats.map(cs => ({
       email: cs.email,
       down: cs.down,
       up: cs.up,
-      online: onlinesResp.obj.includes(cs.email)
+      online: (cs.lastOnline > 0) && (now - cs.lastOnline < ONLINE_GRACE_MS)
     }))
   )
 }
