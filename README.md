@@ -39,7 +39,7 @@ Required environment variables:
 
 | Variable         | Description                          | Example                    |
 | ---------------- | ------------------------------------ | -------------------------- |
-| **XUI_ORIGIN**   | 3X-UI panel URL                      | https://example.org/3x-ui/ |
+| **XUI_ORIGIN**   | 3X-UI panel URL                      | http://localhost/3x-ui/    |
 | **XUI_USERNAME** | Username for logging in to the panel | somebody                   |
 | **XUI_PASSWORD** | Password for logging in to the panel | somepassword               |
 
@@ -49,6 +49,7 @@ Optional environment variables:
 | -------------------- | ---------------------------------------------------- | ------------------------------------------------------------ |
 | **XUI_LOGIN_SECRET** | Additional secret string for logging in to the panel | If such secret was set in the panel's settings               |
 | **XUI_BASIC_AUTH**   | username:password pair for the web server            | If the web server (e.g. reverse proxy) requires HTTP Basic Auth to access the panel |
+| **XUI_WEB_DOMAIN**   | 3X-UI web domain                                     | For correct authentication when using reverse proxy          |
 
 ## Running locally
 

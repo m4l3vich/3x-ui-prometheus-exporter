@@ -1,0 +1,18 @@
+services:
+  3x-ui-prometheus-exporter:
+    build: .
+    container_name: 3x-ui-exporter
+    ports:
+      - "3030:3000"
+    environment:
+      XUI_ORIGIN: ${XUI_ORIGIN:-http://127.0.0.1:2053/}
+      XUI_USERNAME: ${XUI_USERNAME:-admin}
+      XUI_PASSWORD: ${XUI_PASSWORD:-}
+      XUI_WEB_DOMAIN: ${XUI_WEB_DOMAIN:-}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

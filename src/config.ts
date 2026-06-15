@@ -18,6 +18,7 @@ export interface IProcessEnv {
   XUI_USERNAME: string
   XUI_PASSWORD: string
   XUI_LOGIN_SECRET?: string
+  XUI_WEB_DOMAIN?: string
 }
 
 declare global {
@@ -27,4 +28,3 @@ declare global {
     interface ProcessEnv extends IProcessEnv { }
   }
 }
-   
